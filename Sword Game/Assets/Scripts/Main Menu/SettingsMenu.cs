@@ -1,40 +1,56 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 
+/*
+ * Brackey's basic tutorial, needs to be expanded/refactored/refined upon later. Put in as place-holder/start of progress so it is easier to come back to if the game is worth releasing/demoing.
+ */
+
+
 public class SettingsMenu : MonoBehaviour
 {
     [SerializeField] private AudioMixer mixer;
-    [SerializeField] private Dropdown resolutionDropdown;
+    [SerializeField] private TMP_Dropdown resolutionDropdown;
+    
 
-    private Resolution[] availableResolutions;
+    private Resolution[] resolutions;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
-        availableResolutions = Screen.resolutions;
+        this.resolutions = Screen.resolutions;
 
         resolutionDropdown.ClearOptions();
 
-        List<string> resolutions = new List<string>();
+        List<string> options = new List<string>();
 
         int currentResolutionIndex = 0;
 
-        foreach(Resolution resolution in availableResolutions)
+        for(int i = 0; i < resolutions.Length; i++)
         {
-            resolutions.Add(resolution.width + " x " + resolution.height);
+            string option = resolutions[i].width + " x " + resolutions[i].height;
+            options.Add(option);
 
-            if (resolution.width == Screen.currentResolution.width && resolution.height == Screen.currentResolution.height)
-            {
-                //currentResolutionIndex = availableResolutions.GetValue()
-            }
+            if (resolutions[i].width == Screen.currentResolution.width && resolutions[i].height == Screen.currentResolution.height)
+                currentResolutionIndex = i;
+
         }
 
-        resolutionDropdown.AddOptions(resolutions);
+        resolutionDropdown.AddOptions(options);
+        resolutionDropdown.value = currentResolutionIndex;
+        resolutionDropdown.RefreshShownValue();
+
+    }
+
+    public void SetResolution(int resolutionIndex)
+    {
+        Resolution resolution = resolutions[resolutionIndex];
+        Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
     }
 
    public void SetVolume(float volume)
