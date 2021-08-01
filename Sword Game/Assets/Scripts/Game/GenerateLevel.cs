@@ -16,6 +16,9 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private double emptyTileCheck;
     [SerializeField] private double raisedTileCheck;
 
+    [SerializeField] private int minChance;
+    [SerializeField] private int maxChance;
+
     // Start is called before the first frame update
     void Awake()
     {
@@ -26,9 +29,16 @@ public class LevelGenerator : MonoBehaviour
     {
         double rolledValue;
         CreateCheckRanges();
+        
         for (int i = 0; i < rows + columns; i++)
         {
             rolledValue = Random.value;
+            if (rolledValue <= emptyTileCheck + raisedTileCheck)
+            {
+                //Set up way to randomise between calling empty or raised
+            }
+            else
+                tileFactory.CreateBasicTile(); //Needs to flush out with moving the location of the instantiating. Also need to flush out the factory with transform/rotation.
         }
     }
 
@@ -37,15 +47,32 @@ public class LevelGenerator : MonoBehaviour
         return System.Math.Abs((double)(n % 100 / 100));
     }
 
+    // TO:DO Needs to be flushed out once game is more flushed out
+    // Idea is to allow for either user or in-game adjustments to the values and it would be wise to verify the values to make sure they work.
+    // For now, it will just be assumed it won't be open to the user and will need to be implemented later.
     private void CreateCheckRanges()
     {
-        if(emptyTileCheck + raisedTileCheck < 1.0)
+        emptyTileCheck = convertIntoToPerct(chanceForEmpty);
+        raisedTileCheck = convertIntoToPerct(chanceForRaised);
+
+        /* Unused code
+        if (chanceForEmpty + chanceForRaised >= 100)
         {
-            //Do something clever
-            //Reduce by half
-            //Recurssive call
+            if (chanceForEmpty > maxChance)
+                chanceForEmpty = maxChance;
+            else if (chanceForEmpty < minChance)
+                chanceForEmpty = minChance;
+            
+            if (chanceForRaised > maxChance)
+                chanceForRaised = maxChance;
+            else if (chanceForRaised < minChance)
+                chanceForRaised = minChance;
         }
-        ;
+        else
+        {
+            emptyTileCheck = convertIntoToPerct(chanceForEmpty);
+            raisedTileCheck = convertIntoToPerct(chanceForRaised);
+        }*/
     }
 
 }
