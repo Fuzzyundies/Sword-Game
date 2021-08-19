@@ -2,75 +2,83 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor.AI;
 
 public class LevelGenerator : MonoBehaviour
 {
     [SerializeField] private TileFactory tileFactory;
 
-    [SerializeField] private int rows;
-    [SerializeField] private int columns;
+    private int rows;
+    private int columns;
 
     [SerializeField] private int chanceForEmpty;
     [SerializeField] private int chanceForRaised;
+    [SerializeField] private int chanceForTrap;
     [SerializeField] private int chanceForNormal;
 
     private double emptyTileCheck;
     private double raisedTileCheck;
     private double normalTileCheck;
+    private double trapTileCheck;
 
     private int minChance;
     private int maxChance;
 
     private Vector3 tileSize;
 
+    private List<GameObject> allTiles = new List<GameObject>();
+
     // Start is called before the first frame update
     void Awake()
     {
-        GenerateLevel();
+
     }
 
     /*
      * 50% chance for normal "walkable tile" regardless of other percentages.
      */
-    public void GenerateLevel()
+    public void GenerateLevel(int rows, int columns)
     {
+        this.rows = rows;
+        this.columns = columns;
         double rolledValue;
         CreateCheckRanges();
         GetTileSize();
         
 
 
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < this.rows; i++)
         {
-            for (int k = 0; k < columns; k++)
+            for (int k = 0; k < this.columns; k++)
             {
                 rolledValue = Random.value;
-                Debug.Log(rolledValue);
                 if (rolledValue <= normalTileCheck)
                 {
-                    tileFactory.CreateBasicTile(new Vector3(i * tileSize.x, 0, k * tileSize.z), Quaternion.identity);
+                    allTiles.Add(tileFactory.CreateBasicTile(new Vector3(i * tileSize.x, 0, k * tileSize.z), Quaternion.identity));
                 }
                 else
                 {
-                    CreateRandomChangedTile(i, 0, k);
+                    allTiles.Add(CreateRandomChangedTile(i, 0, k));
                 }
             }
         }
+
+        NavMeshBuilder.BuildNavMesh();
     }
     // TO:DO needs to be flushed out to incorporate min/max chance, as well as ChangedTile weight
     private GameObject CreateRandomChangedTile(int i, int j, int k)
     {
-        int randomValue = Random.Range(0, chanceForEmpty + chanceForRaised);
+        int randomValue = Random.Range(0, chanceForEmpty + chanceForRaised + chanceForTrap);
         if (randomValue <= chanceForRaised)
         {
-            Debug.Log("Created Raised");
             return (tileFactory.CreateRaisedTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
         }
-        else
+        else if (randomValue <= chanceForRaised + chanceForEmpty)
         {
-            Debug.Log("Created Empty");
             return (tileFactory.CreateEmptyTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
         }
+        else
+            return (tileFactory.CreateTrapTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
     }
 
     private double convertIntoToPerct(int n)
@@ -85,11 +93,14 @@ public class LevelGenerator : MonoBehaviour
     private void CreateCheckRanges()
     {
         emptyTileCheck = convertIntoToPerct(chanceForEmpty);
+        
         raisedTileCheck = convertIntoToPerct(chanceForRaised);
+
         normalTileCheck = convertIntoToPerct(chanceForNormal);
         if (normalTileCheck <= 0.5)
             normalTileCheck = 0.5;
 
+        trapTileCheck = convertIntoToPerct(chanceForTrap);
         /* Unused code
         if (chanceForEmpty + chanceForRaised >= 100)
         {
@@ -108,7 +119,6 @@ public class LevelGenerator : MonoBehaviour
             emptyTileCheck = convertIntoToPerct(chanceForEmpty);
             raisedTileCheck = convertIntoToPerct(chanceForRaised);
         }*/
-        Debug.Log("Normal Tile Check: " + normalTileCheck);
     }
 
     private void GetTileSize()
