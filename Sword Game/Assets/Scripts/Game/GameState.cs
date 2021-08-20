@@ -4,10 +4,11 @@ using UnityEngine;
 
 public class GameState : MonoBehaviour
 {
-    [SerializeField] LevelGenerator levelGenerator;
+    [SerializeField] private LevelGenerator levelGenerator;
     [SerializeField] private int numberOfEnemies;
     [SerializeField] private int rows;
     [SerializeField] private int columns;
+
 
     List<GameObject> tiles;
 
@@ -18,6 +19,7 @@ public class GameState : MonoBehaviour
         columns = Random.Range(5, 20);
 
         levelGenerator.GenerateLevel(rows, columns);
+        tiles = levelGenerator.GetTileList();
     }
 
     // Update is called once per frame
