@@ -7,6 +7,7 @@ using UnityEditor.AI;
 public class LevelGenerator : MonoBehaviour
 {
     [SerializeField] private TileFactory tileFactory;
+    [SerializeField] private PlayerFactory playerFactory;
 
     private int rows;
     private int columns;
@@ -26,7 +27,7 @@ public class LevelGenerator : MonoBehaviour
 
     private Vector3 tileSize;
 
-    private List<GameObject> allTiles = new List<GameObject>();
+    private List<GameObject> currentTileMap = new List<GameObject>();
 
     // Start is called before the first frame update
     void Awake()
@@ -43,9 +44,7 @@ public class LevelGenerator : MonoBehaviour
         this.columns = columns;
         double rolledValue;
         CreateCheckRanges();
-        GetTileSize();
-        
-
+        tileSize = tileFactory.GetTileSize();
 
         for (int i = 0; i < this.rows; i++)
         {
@@ -54,16 +53,20 @@ public class LevelGenerator : MonoBehaviour
                 rolledValue = Random.value;
                 if (rolledValue <= normalTileCheck)
                 {
-                    allTiles.Add(tileFactory.CreateBasicTile(new Vector3(i * tileSize.x, 0, k * tileSize.z), Quaternion.identity));
+                    currentTileMap.Add(tileFactory.CreateBasicTile(new Vector3(i * tileSize.x, 0, k * tileSize.z), Quaternion.identity));
                 }
                 else
                 {
-                    allTiles.Add(CreateRandomChangedTile(i, 0, k));
+                    currentTileMap.Add(CreateRandomChangedTile(i, 0, k));
                 }
             }
         }
 
+        Debug.Log(currentTileMap.Count);
+
         NavMeshBuilder.BuildNavMesh();
+
+        SpawnPlayer();
     }
     // TO:DO needs to be flushed out to incorporate min/max chance, as well as ChangedTile weight
     private GameObject CreateRandomChangedTile(int i, int j, int k)
@@ -101,28 +104,30 @@ public class LevelGenerator : MonoBehaviour
             normalTileCheck = 0.5;
 
         trapTileCheck = convertIntoToPerct(chanceForTrap);
-        /* Unused code
-        if (chanceForEmpty + chanceForRaised >= 100)
-        {
-            if (chanceForEmpty > maxChance)
-                chanceForEmpty = maxChance;
-            else if (chanceForEmpty < minChance)
-                chanceForEmpty = minChance;
-            
-            if (chanceForRaised > maxChance)
-                chanceForRaised = maxChance;
-            else if (chanceForRaised < minChance)
-                chanceForRaised = minChance;
-        }
-        else
-        {
-            emptyTileCheck = convertIntoToPerct(chanceForEmpty);
-            raisedTileCheck = convertIntoToPerct(chanceForRaised);
-        }*/
     }
 
-    private void GetTileSize()
+    // Stephen style of code :-), wonder how memory efficient to return a constructor like this, and if it auto clears up/marked for garbage collecting.
+    public Vector3 GetSpawnLocation(int i, GameObject agent)
     {
-        tileSize = tileFactory.GetTileSize();
+        return new Vector3(currentTileMap[i].transform.position.x, currentTileMap[i].transform.position.y + currentTileMap[i].GetComponent<BoxCollider>().bounds.size.y * 0.5f + agent.GetComponentInChildren<CapsuleCollider>().height * 0.5f, currentTileMap[i].transform.position.z);
+    }
+
+    public List<GameObject> GetTileList()
+    {
+        return currentTileMap;
+    }
+
+    private void SpawnPlayer()
+    {
+        bool spawned = false;
+        while (!spawned)
+        {
+            int num = Random.Range(0, rows + columns);
+            if (currentTileMap[num].activeSelf)
+            {
+                playerFactory.SpawnPlayer(GetSpawnLocation(num, playerFactory.GetPlayerAgent()), Quaternion.identity);
+                spawned = true;
+            }
+        }
     }
 }
