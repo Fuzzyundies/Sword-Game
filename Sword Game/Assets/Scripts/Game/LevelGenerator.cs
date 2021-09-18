@@ -107,9 +107,9 @@ public class LevelGenerator : MonoBehaviour
     }
 
     // Stephen style of code :-), wonder how memory efficient to return a constructor like this, and if it auto clears up/marked for garbage collecting.
-    public Vector3 GetSpawnLocation(int i)
+    public Vector3 GetSpawnLocation(int i, GameObject agent)
     {
-        return new Vector3(currentTileMap[i].transform.position.x, currentTileMap[i].transform.position.y + currentTileMap[i].GetComponent<BoxCollider>().bounds.size.y * 0.5f + currentTileMap[i].GetComponent<BoxCollider>().bounds.size.y, currentTileMap[i].transform.position.z);
+        return new Vector3(currentTileMap[i].transform.position.x, currentTileMap[i].transform.position.y + currentTileMap[i].GetComponent<BoxCollider>().bounds.size.y * 0.5f + agent.GetComponentInChildren<CapsuleCollider>().height * 0.5f, currentTileMap[i].transform.position.z);
     }
 
     public List<GameObject> GetTileList()
@@ -125,7 +125,7 @@ public class LevelGenerator : MonoBehaviour
             int num = Random.Range(0, rows + columns);
             if (currentTileMap[num].activeSelf)
             {
-                playerFactory.SpawnPlayer(currentTileMap[num].gameObject.transform.position + GetSpawnLocation(num), Quaternion.identity);
+                playerFactory.SpawnPlayer(GetSpawnLocation(num, playerFactory.GetPlayerAgent()), Quaternion.identity);
                 spawned = true;
             }
         }

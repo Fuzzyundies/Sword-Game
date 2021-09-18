@@ -19,4 +19,9 @@ public class PlayerFactory : MonoBehaviour
     {
         return playerAgent.GetComponentInChildren<CapsuleCollider>().height;
     }
+
+    public GameObject GetPlayerAgent()
+    {
+        return playerAgent;
+    }
 }
