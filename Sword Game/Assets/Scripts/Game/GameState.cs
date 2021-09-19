@@ -5,26 +5,34 @@ using UnityEngine;
 public class GameState : MonoBehaviour
 {
     [SerializeField] private LevelGenerator levelGenerator;
-    [SerializeField] private int numberOfEnemies;
-    [SerializeField] private int rows;
-    [SerializeField] private int columns;
 
+    private int activeRows;
+    private int activeColumns;
 
-    List<GameObject> tiles;
-
-    // Start is called before the first frame update
+    
     void Awake()
     {
-        rows = Random.Range(5, 20);
-        columns = Random.Range(5, 20);
-
-        levelGenerator.GenerateLevel(rows, columns);
-        tiles = levelGenerator.GetTileList();
+        levelGenerator.CreateTileMap();
+        
+        //For the first "room" in a run. Can be either a predetermined size or a random size depending on the function called.
+        levelGenerator.NewLevel();
     }
 
-    // Update is called once per frame
-    void Update()
+    // Even though not used for the initial room generation, the plan is for the values to be able to be adjusted in game from players actions/events. Like rooms should be able to be very randomized and very customisable at the same time.
+    // Number of tiles, chances for different types of tiles, tile sizes (stil has to be rectangular at least) to start. 
+    public void SetDimensions(int rows, int columns)
     {
-        
+        SetActiveRows(rows);
+        SetActiveColumns(columns);
+    }
+
+    public void SetActiveRows(int rows)
+    {
+        activeRows = rows;
+    }
+
+    public void SetActiveColumns(int columns)
+    {
+        activeColumns = columns;
     }
 }

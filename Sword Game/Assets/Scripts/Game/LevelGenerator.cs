@@ -6,126 +6,141 @@ using UnityEditor.AI;
 
 public class LevelGenerator : MonoBehaviour
 {
-    [SerializeField] private TileFactory tileFactory;
+    [SerializeField] private TileCreationFactory tileCreationFactory;
+    [SerializeField] private TileActivationFactory tileActivationFactory;
     [SerializeField] private PlayerFactory playerFactory;
 
-    private int rows;
-    private int columns;
+    private int maxRows = 20;
+    private int maxColumns = 20;
+    private int minRows = 5;
+    private int minColumns = 5;
 
-    [SerializeField] private int chanceForEmpty;
-    [SerializeField] private int chanceForRaised;
-    [SerializeField] private int chanceForTrap;
-    [SerializeField] private int chanceForNormal;
-
-    private double emptyTileCheck;
-    private double raisedTileCheck;
-    private double normalTileCheck;
-    private double trapTileCheck;
-
-    private int minChance;
-    private int maxChance;
+    [SerializeField] private int activeRows;
+    [SerializeField] private int activeColumns;
 
     private Vector3 tileSize;
 
-    private List<GameObject> currentTileMap = new List<GameObject>();
+    private GameObject[,] allTiles;
+    private GameObject[,] activeTiles;
 
-    // Start is called before the first frame update
-    void Awake()
+    [SerializeField] private int emptyChance;
+    [SerializeField] private int raisedChance;
+    [SerializeField] private int trappedChance;
+    [SerializeField] private int basicChance;
+
+    private int minBasicChance = 25;
+    private int fullRange;
+
+    private void Awake()
     {
-
+        allTiles = new GameObject[maxRows, maxColumns];
     }
 
-    /*
-     * 50% chance for normal "walkable tile" regardless of other percentages.
-     */
-    public void GenerateLevel(int rows, int columns)
+    public void CreateTileMap()
     {
-        this.rows = rows;
-        this.columns = columns;
-        double rolledValue;
-        CreateCheckRanges();
-        tileSize = tileFactory.GetTileSize();
+        tileSize = tileCreationFactory.GetTileSize();
 
-        for (int i = 0; i < this.rows; i++)
+        for (int i = 0; i < maxRows; i++)
         {
-            for (int k = 0; k < this.columns; k++)
+            for (int j = 0; j < maxColumns; j++)
             {
-                rolledValue = Random.value;
-                if (rolledValue <= normalTileCheck)
-                {
-                    currentTileMap.Add(tileFactory.CreateBasicTile(new Vector3(i * tileSize.x, 0, k * tileSize.z), Quaternion.identity));
-                }
-                else
-                {
-                    currentTileMap.Add(CreateRandomChangedTile(i, 0, k));
-                }
+                allTiles[i, j] = tileCreationFactory.CreateTile(new Vector3(i * tileSize.x, 0, j * tileSize.z), Quaternion.identity);
+            }
+        }
+    }
+
+    public void NewLevel()
+    {
+        NewLevel(Random.Range(minRows, maxRows), Random.Range(minColumns, maxColumns));
+    }
+
+    public void NewLevel(int rows, int columns)
+    {
+        SetValues();
+        activeRows = rows;
+        activeColumns = columns;
+        activeTiles = new GameObject[activeRows, activeColumns];
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int k = 0; k < columns; k++)
+            {
+                EnableTile(i, k);
             }
         }
 
-        Debug.Log(currentTileMap.Count);
-
         NavMeshBuilder.BuildNavMesh();
-
         SpawnPlayer();
     }
-    // TO:DO needs to be flushed out to incorporate min/max chance, as well as ChangedTile weight
-    private GameObject CreateRandomChangedTile(int i, int j, int k)
+
+    private void SetValues()
     {
-        int randomValue = Random.Range(0, chanceForEmpty + chanceForRaised + chanceForTrap);
-        if (randomValue <= chanceForRaised)
+        if (basicChance < minBasicChance)
+            basicChance = minBasicChance;
+
+        fullRange = basicChance + emptyChance + raisedChance + trappedChance;
+    }
+
+    //There is a better way/cleaner way of doing this, but it works for now. Goes through basic then empty, raised, and finally trapped. Able to be added onto later for different types.
+    private void EnableTile(int row, int column)
+    {
+        int randomValue = Random.Range(0, fullRange);
+
+        if (randomValue <= basicChance)
         {
-            return (tileFactory.CreateRaisedTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
-        }
-        else if (randomValue <= chanceForRaised + chanceForEmpty)
-        {
-            return (tileFactory.CreateEmptyTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
+            tileActivationFactory.EnableBasicTile(allTiles[row, column].GetComponent<TileManager>());
         }
         else
-            return (tileFactory.CreateTrapTile(new Vector3(i * tileSize.x, j, k * tileSize.z), Quaternion.identity));
+        {
+            randomValue -= basicChance;
+            
+            if (randomValue <= emptyChance)
+            {
+                ; //No need for it to do anything. Will be added to the currentTileMap regardless.
+            }
+            else
+            {
+                randomValue -= emptyChance;
+
+                if (randomValue <= raisedChance)
+                {
+                    tileActivationFactory.EnableRaisedTile(allTiles[row, column].GetComponent<TileManager>());
+                }
+                else
+                {
+                    randomValue -= raisedChance;
+
+                    if (randomValue <= trappedChance)
+                    {
+                        tileActivationFactory.EnableTrapTile(allTiles[row, column].GetComponent<TileManager>());
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Type of tile not enabled");
+                    }
+                }
+            }
+        }
+        activeTiles[row,column] = allTiles[row, column];
     }
 
-    private double convertIntoToPerct(int n)
+    // Stephen style of code, wonder how memory efficient to return a constructor like this.
+    public Vector3 GetAgentSpawnLocation(int row, int column, GameObject agent)
     {
-        return System.Math.Abs((double)(n % 100 / 100));
+        return new Vector3(activeTiles[row,column].transform.position.x, activeTiles[row, column].transform.position.y + activeTiles[row, column].GetComponent<BoxCollider>().bounds.size.y * 0.5f + agent.GetComponentInChildren<CapsuleCollider>().height * 0.5f, activeTiles[row, column].transform.position.z);
     }
 
-    // TO:DO Needs to be flushed out once game is more flushed out
-    // Idea is to allow for either user or in-game adjustments to the values and it would be wise to verify the values to make sure they work.
-    // For now, it will just be assumed it won't be open to the user and will need to be implemented later.
-    // Update the 0.5 to being a variable, but wait for a better picture on what to do.
-    private void CreateCheckRanges()
-    {
-        emptyTileCheck = convertIntoToPerct(chanceForEmpty);
-        
-        raisedTileCheck = convertIntoToPerct(chanceForRaised);
-
-        normalTileCheck = convertIntoToPerct(chanceForNormal);
-        if (normalTileCheck <= 0.5)
-            normalTileCheck = 0.5;
-
-        trapTileCheck = convertIntoToPerct(chanceForTrap);
-    }
-
-    // Stephen style of code :-), wonder how memory efficient to return a constructor like this, and if it auto clears up/marked for garbage collecting.
-    public Vector3 GetSpawnLocation(int i, GameObject agent)
-    {
-        return new Vector3(currentTileMap[i].transform.position.x, currentTileMap[i].transform.position.y + currentTileMap[i].GetComponent<BoxCollider>().bounds.size.y * 0.5f + agent.GetComponentInChildren<CapsuleCollider>().height * 0.5f, currentTileMap[i].transform.position.z);
-    }
-
-    public List<GameObject> GetTileList()
-    {
-        return currentTileMap;
-    }
-
+    // TO:DO make a more intelligent spawner.
     private void SpawnPlayer()
     {
         bool spawned = false;
         while (!spawned)
         {
-            int num = Random.Range(0, rows + columns);
-            if (currentTileMap[num].activeSelf)
+            int row = Random.Range(0, activeRows);
+            int column = Random.Range(0, activeColumns);
+            if (activeTiles[row,column].activeSelf)
             {
-                playerFactory.SpawnPlayer(GetSpawnLocation(num, playerFactory.GetPlayerAgent()), Quaternion.identity);
+                playerFactory.SpawnPlayer(GetAgentSpawnLocation(row, column, playerFactory.GetPlayerAgent()), Quaternion.identity);
                 spawned = true;
             }
         }

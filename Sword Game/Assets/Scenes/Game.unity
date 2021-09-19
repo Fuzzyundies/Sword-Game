@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 1541905170}
   - component: {fileID: 1541905169}
   - component: {fileID: 1541905172}
+  - component: {fileID: 1541905173}
   m_Layer: 0
   m_Name: DoNotDestroy
   m_TagString: Untagged
@@ -170,7 +171,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   basicTile: {fileID: 14938667299075347, guid: 76a159c3f7bd6c844a729a3c7566ac9b, type: 3}
-  trapTile: {fileID: 14938667299075347, guid: abd28952299be4546be016202bd3a8df, type: 3}
 --- !u!114 &1541905170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -183,12 +183,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e96fca9e256b2479d56cf8592795e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileFactory: {fileID: 1541905169}
+  tileCreationFactory: {fileID: 1541905169}
+  tileActivationFactory: {fileID: 1541905173}
   playerFactory: {fileID: 1541905172}
-  chanceForEmpty: 20
-  chanceForRaised: 20
-  chanceForTrap: 10
-  chanceForNormal: 60
+  activeRows: 0
+  activeColumns: 0
+  emptyChance: 25
+  raisedChance: 25
+  trappedChance: 25
+  basicChance: 50
 --- !u!114 &1541905171
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -202,9 +205,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelGenerator: {fileID: 1541905170}
-  numberOfEnemies: 0
-  rows: 0
-  columns: 0
 --- !u!114 &1541905172
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218,6 +218,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerAgent: {fileID: 5954382015446875503, guid: 10706591732362841b1cac49448a5b72, type: 3}
+--- !u!114 &1541905173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1541905167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef643121156829a438eed9b8b7f0f28c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  basicTileMaterial: {fileID: 2100000, guid: 6d5d9c6e4df25ea4fad4fd32f931e2eb, type: 2}
+  trapTileMaterial: {fileID: 2100000, guid: 7c7ee9abc97e60247b24e371adbd1bcf, type: 2}
 --- !u!1 &2124027072
 GameObject:
   m_ObjectHideFlags: 0
