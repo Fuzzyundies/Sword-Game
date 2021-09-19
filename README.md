@@ -16,10 +16,10 @@ Currently in:
    Once I get a model in there, that bit of code will have to change, and no sense in putting it off.
 
 Currently implemented patterns:
-   Object Pool,
-   Factories
+- Object Pool
+- Factories
 
 Next on Pipeline
-   Flyweight (materials for tiles),
-   Command (multiple implementations),
-   Importing my own custom models & animations, and then linking up the players/animation/movement on screen.
+- Flyweight (materials for tiles)
+- Command (multiple implementations)
+- Importing my own custom models & animations, and then linking up the players/animation/movement on screen.
